@@ -1,0 +1,107 @@
+name: ' webapi build'
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Select env:- Dev/QA/Prod'
+        required: true
+
+jobs:
+  Build-and-Deploy:
+    runs-on: windows-latest
+    env:
+      DOTNET_VERSION: '3.1.x'
+      SOLUTIONPATH: '/.sln'
+      NUGET_VERSION: '5.x'
+    steps:
+
+ #Checkout  repository
+
+    - name: 'Checkout GitHub Code'
+      uses: actions/checkout@v2
+      
+      
+    #Setup dotnet
+
+    - name: Setup DotNet ${{ env.DOTNET_VERSION }}
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+ 
+ #Setup MSBuild
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v1
+      
+    #Setup Nuget
+    - name: Setup NuGet
+      uses: NuGet/setup-nuget@v1
+      with:
+       nuget-version: ${{env.NUGET_VERSION}}
+
+    - name: Restore dependencies
+      run: nuget restore ${{env.SOLUTIONPATH}}
+    #- uses: actions/cache@v1
+     # id: cache
+      #with:
+       #path: ~/.nuget/packages
+       #key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }} 
+    
+ #Checkout ES-PMMS-Interfaces repository
+
+    #- name: 'Checkout ES-PMMS-Interfaces'
+     # uses: actions/checkout@v2
+      #with:
+       # repository: https://github.com/
+        #token: ${{ secrets.LOGICAPP_PAT }}
+        #path: 
+
+  
+  #Restore Nuget
+    
+    #- uses: nuget/setup-nuget@v1
+     # with:
+      # nuget-version: '5.x'
+       #run: nuget restore ${{env.SOLUTIONPATH}}
+    #- uses: actions/cache@v1
+     # id: cache
+      #with:
+       #path: ~/.nuget/packages
+       #key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+  #Build code
+    #- name: Build code
+     # run: dotnet build ${{env.SOLUTIONPATH}} --configuration Release --no-restore
+    - name: Build Solution
+      run: |
+          msbuild ${{env.SOLUTIONPATH}} /p:OutputPath=./output
+      
+#   #Make Dir
+#     - name: make directory for test
+#       run: mkdir -p testdir
+
+#   #Run unit test
+#     - name: Run unit test
+#       run: dotnet test  ${{ env.SOLUTIONPATH }} --logger html --results-directory testdir --no-build
+
+#   #upload artifacts
+#     - name: Upload test results
+#       uses: actions/upload-artifact@v2
+#       with:
+#         name: Upload artifacts
+#         path: testdir     
+
+   # - name: Deploy to IIS
+    #  run: |
+     #   iisreset /stop
+      #  Copy-Item C:\inetpub\wwwroot\output\_i  C:\inetpub\wwwroot\-Recurse -Force
+       # iisreset /start
+       
+   # deployment to iis server
+     
+    - name: copying using SSH
+      uses: garygrossgarten/github-action-scp@release
+      with:
+          local: D:\a\s\WebApi
+          remote: C:\Users\ram\artifacts
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.SSH_USER }}
+          password: ${{ secrets.PASSWORD }}
